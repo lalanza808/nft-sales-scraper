@@ -1,0 +1,186 @@
+<html>
+    <head>
+        <title>Art101 Sales Statistics</title>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <style>
+            #container {
+                display: grid;
+                grid-template-columns: 5fr 2fr;
+                grid-gap: 2.5rem;
+                visibility: hidden;
+            }
+            #container > div {
+                align-self: center;
+            }
+            #loading {
+                font-weight: bold;
+            }
+            body {
+                font-family: "Open Sans";
+                color: black;
+                padding: 20px;
+            }
+            h1 {
+                margin-bottom: 0;
+            }
+        </style>
+         <link rel="preconnect" href="https://fonts.googleapis.com">
+         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+         <link href="https://fonts.googleapis.com/css2?family=Open+Sans&display=swap" rel="stylesheet">
+    </head>
+    <body>
+        <h1>Art101 Sales Statistics</h1>
+        <p><a href="https://github.com/lalanza808/nft-sales-scraper" target="_blank">Source Code</a></p>
+        <div id="loading">
+            Loading, please wait...
+        </div>
+        <div id="container"></div>
+        <script>
+            const container = document.getElementById('container');
+
+            fetch('/api/contracts').then(function(response) {
+              response.json().then(function(json) {
+                for (contract in json) {
+                  console.log(`Found contract ${contract} (${json[contract]['contract_address']})`)
+                  const contractName = contract;
+                  const contractAddress = json[contract]['contract_address'];
+                  const salesId = `sales-chart-${contractName}`;
+                  const platformId = `platform-chart-${contractName}`;
+                  newSalesChartDiv = document.createElement('div');
+                  newSalesChart = document.createElement('canvas');
+                  newSalesChart.setAttribute('id', salesId);
+                  newSalesChartDiv.appendChild(newSalesChart);
+                  newPlatformChartDiv = document.createElement('div');
+                  newPlatformChart = document.createElement('canvas');
+                  newPlatformChart.setAttribute('id', platformId);
+                  newPlatformChartDiv.appendChild(newPlatformChart);
+                  container.appendChild(newSalesChartDiv);
+                  container.appendChild(newPlatformChartDiv);
+                  let loaded = 0;
+                  fetch(`/api/${contractAddress}/data`).then(function(response) {
+                      response.json().then(function(json) {
+                          loaded++;
+                          if (loaded == 2) {
+                              document.getElementById("container").style.visibility = "visible";
+                              document.getElementById("loading").style.display = "none";
+                          }
+                          const labels = json.map(d => d.date);
+                          const data = {
+                          labels: labels,
+                          datasets: [
+                              {
+                                  type: 'line',
+                                  label: 'Average price',
+                                  backgroundColor: 'rgb(99, 132, 255)',
+                                  borderColor: 'rgb(99, 132, 255)',
+                                  data: json.map(d => d.average_price),
+                                  yAxisID: 'y1',
+                              },
+                              {
+                                  type: 'line',
+                                  label: 'Floor price',
+                                  backgroundColor: '#ccc',
+                                  borderColor: '#ccc',
+                                  data: json.map(d => d.floor_price),
+                                  yAxisID: 'y1',
+                              },
+                              {
+                                  type: 'bar',
+                                  label: 'Volume',
+                                  backgroundColor: 'rgb(255, 99, 132)',
+                                  borderColor: 'rgb(255, 99, 132)',
+                                  data: json.map(d => d.volume),
+                                  yAxisID: 'y',
+                              }]
+                          };
+                          const config = {
+                              type: 'line',
+                              data: data,
+                              options: {
+                                  elements: {
+                                      point: {
+                                          radius: 0
+                                      }
+                                  },
+                                  plugins: {
+                                      title: {
+                                      display: true,
+                                      text: `Sales for ${contractName}`,
+                                      font: {
+                                        size: '18px'
+                                      }
+                                    }
+                                  },
+                                  scales: {
+                                      y: {
+                                          type: 'linear',
+                                          display: true,
+                                          position: 'left',
+                                      },
+                                      y1: {
+                                          type: 'linear',
+                                          display: true,
+                                          position: 'right',
+                                          grid: {
+                                              drawOnChartArea: false,
+                                          },
+                                      },
+                                  }
+                              }
+                          };
+                          const myChart = new Chart(
+                              document.getElementById(salesId),
+                              config
+                          );
+                      })
+                  });
+                  fetch(`/api/${contractAddress}/platforms`).then(function(response) {
+                      response.json().then(function(json) {
+                          loaded++;
+                          if (loaded == 2) {
+                              document.getElementById("container").style.visibility = "visible";
+                              document.getElementById("loading").style.display = "none";
+                          }
+
+                          const labels = json.map(d => d.platform);
+                          const total = json.map(d => d.volume).reduce((prev,next) => prev+next, 0);
+                          const data = {
+                          labels: labels,
+                          datasets: [
+                              {
+                                  label: 'Platform',
+                                  data: json.map(d => d.volume),
+                                  backgroundColor: ["#7463A8", "#80B7D8", "#AC39A0", "#B0C484", "#B75055", "#F12055"]
+                              }]
+                          };
+                          const config = {
+                              type: 'doughnut',
+                              data: data,
+                              options: {
+                                  plugins: {
+                                      title: {
+                                          display: true,
+                                          text: `Volume for ${contractName}: ${total.toFixed(2)}Ξ`,
+                                          font: {
+                                            size: '18px'
+                                          }
+                                      },
+                                      legend: {
+                                          position: 'bottom',
+                                      },
+                                  }
+                              }
+                          };
+                          const myChart = new Chart(
+                              document.getElementById(platformId),
+                              config
+                          );
+                      })
+                  });
+                }
+              })
+            })
+
+          </script>
+    </body>
+</html>

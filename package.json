@@ -1,0 +1,29 @@
+{
+  "name": "art101-sales-scraper",
+  "version": "1.0.0",
+  "engines": {
+    "node": "16.x"
+  },
+  "description": "",
+  "main": "src/main.js",
+  "scripts": {
+    "serve": "node --max_old_space_size=128 --optimize_for_size src/server.js",
+    "start": "concurrently npm:scrape npm:serve --restart-tries -1 --restart-after 5000",
+    "stop": "pkill -e -f concurrently && pkill -e -f scrape",
+    "scrape": "node --max_old_space_size=128 --optimize_for_size src/scraper.js",
+    "resync": "echo Deleting data in 5 seconds... && sleep 5 && rm storage/*.txt",
+    "wipe": "echo Deleting data in 5 seconds... && sleep 5 && npm run resync && storage/*.db"
+  },
+  "author": "lza_menace",
+  "license": "ISC",
+  "dependencies": {
+    "better-sqlite3": "^7.4.5",
+    "bignumber.js": "^9.0.1",
+    "concurrently": "^6.5.0",
+    "dotenv": "^10.0.0",
+    "ethers": "^5.6.9",
+    "express": "^4.17.1",
+    "node-fetch": "^3.2.9",
+    "sqlite3": "^5.0.2"
+  }
+}

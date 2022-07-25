@@ -1,0 +1,5 @@
+.env.local
+node_modules
+storage/*.txt
+storage/*.db
+data/contracts.json
