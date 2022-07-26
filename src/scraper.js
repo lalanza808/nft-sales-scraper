@@ -19,6 +19,7 @@ const MARKETPLACE_ABI = require('../data/marketplace');
 const SEAPORT_ABI = require('../data/seaport');
 const WYVERN_ABI = require('../data/wyvern');
 const LOOKSRARE_ABI = require('../data/looksrare');
+const X2Y2_ABI = require('../data/x2y2');
 const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const TRANSFER_SINGLE_TOPIC = '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62';
@@ -29,6 +30,7 @@ const X2Y2_SALE_TOPIC = '0x3cbb63f144840e5b1b0a38a7c19211d2e89de4d7c5faf8b2d3c17
 const seaportInterface = new ethers.utils.Interface(SEAPORT_ABI);
 const looksrareInterface = new ethers.utils.Interface(LOOKSRARE_ABI);
 const wyvernInterface = new ethers.utils.Interface(WYVERN_ABI);
+const x2y2Interface = new ethers.utils.Interface(X2Y2_ABI);
 const provider = new ethers.providers.WebSocketProvider(process.env.GETH_NODE);
 const db = new Database('./storage/sqlite.db');
 
@@ -226,6 +228,8 @@ class Scrape extends Collection {
           amountWei = logDescription.args.price.toString();
         } else if (log.topics[0].toLowerCase() === X2Y2_SALE_TOPIC.toLowerCase()) {
           // Handle x2y2 sales
+          const logDescription = x2y2Interface.parseLog(log);
+          return
           const data = log.data.substring(2);
           const dataSlices = data.match(/.{1,64}/g);
           sale = true;
@@ -375,11 +379,11 @@ async function writeToDatabase(_q) {
 }
 
 // Sample events for testing functionality and detecting sales
-// let c = new Scrape('non-fungible-soup');
+let c = new Scrape('mondriannft');
 // c.getSalesEvents('0x2f8961209daca23288c499449aa936b54eec5c25720b9d7499a8ee5bde7fcdc7')
 // c.getSalesEvents('0xb20853f22b367ee139fd800206bf1cba0c36f1a1dd739630f99cc6ffd0471edc')
 // c.getSalesEvents('0x71e5135a543e17cc91992a2229ae5811461c96b84d5e2560ac8db1dd99bb17e3')
-// c.getSalesEvents('0x5dc68e0bd60fa671e7b6702002e4ce374de6a5dd49fcda00fdb45e26771bcbd9')
+c.getSalesEvents('0xe567d00bb0c16928d5d8c258de8dd928e93209b40f7c958bc485d2a6c549b8a9')
 // c.getSalesEvents('0x975d10cdd873ee5bb29e746c2f1f3b776078cace9c04ce419cb66949239288b5')
 // c.getSalesEvents('0x8d45ed8168a740f8b182ec0dbad1c37d6c6dbd8aa865be408d865ca01fb0fa94')
 // c.getSalesEvents('0x27ab6f12604bf17a9e7c93bf1a7cc466d7dfd922565d267eac10879b59d5d0b5')
@@ -387,7 +391,7 @@ async function writeToDatabase(_q) {
 // c.getSalesEvents('0x04746b6ba1269906db8e0932263b86a6fc35a30a31cf73d2b7db078f6f4ed442')
 // c.getSalesEvents('0x24d6523c5048b2df3e7f8b24d63a6644e4c0ed33cfae6396190e3ded5fc79321')
 // c.getSalesEvents('0xe56dc64c44a3cbfe3a1e68f8669a65f17ebe48d64e944673122a565b7c641d1e')
-// return
+return
 
 if (process.env.SCRAPE) {
   let c = new Scrape(process.env.SCRAPE)
