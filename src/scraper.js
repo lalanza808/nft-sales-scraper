@@ -258,7 +258,9 @@ class Scrape extends Collection {
           writeToDatabase(q)
             .then((res) => this.writeLastBlock(log.blockNumber))
             .catch((err) => console.log(`Error writing to database: ${err}`));
-          await postDiscord(q);
+          postDiscord(q)
+            .then((res) => console.log(`[ ${timestamp.toISOString()} ][ ${this.contractName} ][ discord ] ${res}`))
+            .catch((err) => console.log(`Error posting to Discord: ${err}`));
         }
       });
     } catch(err) {
@@ -387,6 +389,7 @@ async function writeToDatabase(_q) {
 // c.getSalesEvents('0x04746b6ba1269906db8e0932263b86a6fc35a30a31cf73d2b7db078f6f4ed442')
 // c.getSalesEvents('0x24d6523c5048b2df3e7f8b24d63a6644e4c0ed33cfae6396190e3ded5fc79321')
 // c.getSalesEvents('0xe56dc64c44a3cbfe3a1e68f8669a65f17ebe48d64e944673122a565b7c641d1e')
+// c.getSalesEvents('0xe567d00bb0c16928d5d8c258de8dd928e93209b40f7c958bc485d2a6c549b8a9')
 // return
 
 if (process.env.SCRAPE) {

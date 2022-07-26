@@ -13,14 +13,13 @@ const assetsBase = 'https://art101-assets.s3.us-west-2.amazonaws.com';
 
 async function postDiscord(_q) {
   if (process.env.DISCORD_ACTIVE == 0) return
-  const contractAddress = ethers.utils.getAddress(_q.contractAddress);
   try {
     const title = `Sale of token ${_q.tokenId} for ${_q.contractName}!`;
     const desc = `Purchased by ${shortenAddress(_q.targetOwner)} at <t:${Number(_q.txDate.getTime()) / 1000}> for ${ethers.utils.formatEther(_q.amount.toString())}Ξ on ${camelCase(_q.eventSource)}`;
-    const url = `${assetsBase}/${contractAddress}/${_q.tokenId.toString()}.json`;
+    const url = `${assetsBase}/${_q.contractAddress}/${_q.tokenId.toString()}.json`;
     const metadata = await fetch(url)
       .then((r) => r.json());
-    const imageURL = metadata.image.replace('ipfs://', `${assetsBase}/${contractAddress}/`);
+    const imageURL = metadata.image.replace('ipfs://', `${assetsBase}/${_q.contractAddress}/`);
     const res = await fetch(process.env.DISCORD_WEBHOOK, {
       method: 'POST',
       headers: {
@@ -40,6 +39,7 @@ async function postDiscord(_q) {
         ]
       })
     });
+    return `posted sale info to Discord: ${title} - ${desc} - ${imageURL}`;
   } catch(err) {
     throw new Error(`[!] Failed to post to Discord: ${err}`);
   }
