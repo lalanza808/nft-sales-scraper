@@ -106,7 +106,8 @@ class Scrape extends Collection {
 
       while (lastScrapedBlock >= latestEthBlock) {
         latestEthBlock = await this.provider.getBlockNumber();
-        console.log(`[ ${(new Date()).toISOString()} ][ ${this.contractName} ] [ waiting ]\n`)
+        const timestamp = await this.getBlockTimestamp(latestEthBlock);
+        console.log(`[ ${timestamp.toISOString()} ][ ${this.contractName} ] [ waiting ]\n`)
         await sleep(120);
       }
     }
@@ -115,7 +116,8 @@ class Scrape extends Collection {
   // query historical logs
   async filterTransfers(startBlock) {
     let transfers;
-    console.log(`[ ${(new Date()).toISOString()} ][ ${this.contractName} ][ scraping ] blocks ${startBlock} - ${startBlock + CHUNK_SIZE}\n`);
+    const timestamp = await this.getBlockTimestamp(startBlock);
+    console.log(`[ ${timestamp.toISOString()} ][ ${this.contractName} ][ scraping ] blocks ${startBlock} - ${startBlock + CHUNK_SIZE}\n`);
     if (this.erc1155) {
       transfers = this.contract.filters.TransferSingle(null, null);
     } else {
