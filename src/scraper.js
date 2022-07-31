@@ -41,7 +41,7 @@ class Collection {
     }
     const data = ALL_CONTRACTS[contractName];
     this.contractName = contractName;
-    this.contractAddress = data['contract_address'].toLowerCase();
+    this.contractAddress = data['contract_address'];
     this.erc1155 = data['erc1155'];
     this.startBlock = data['start_block'];
     if (this.erc1155) {
@@ -258,9 +258,14 @@ class Scrape extends Collection {
           writeToDatabase(q)
             .then((res) => this.writeLastBlock(log.blockNumber))
             .catch((err) => console.log(`Error writing to database: ${err}`));
-          postDiscord(q)
-            .then((res) => console.log(`[ ${timestamp.toISOString()} ][ ${this.contractName} ][ discord ] ${res}`))
-            .catch((err) => console.log(`Error posting to Discord: ${err}`));
+          if (checkUnsentNotif(txHash, logIndex)) {
+            postDiscord(q)
+              .then(async res => {
+                await markSent(txHash, logIndex);
+                console.log(`[ ${timestamp.toISOString()} ][ ${this.contractName} ][ discord ] ${res}`)
+              })
+              .catch((err) => console.log(`Error posting to Discord: ${err}`));
+          }
         }
       });
     } catch(err) {
@@ -320,7 +325,7 @@ async function createDatabaseIfNeeded() {
         `CREATE TABLE events (
           contract text, event_type text, from_wallet text, to_wallet text,
           token_id number, amount number, tx_date text, tx text,
-          log_index number, platform text,
+          log_index number, platform text, discord_sent number, twitter_sent number,
           UNIQUE(tx, log_index)
         );`,
       );
@@ -346,13 +351,35 @@ async function checkRowExists(txHash, logIndex) {
   return rowExists;
 }
 
+async function checkUnsentNotif(txHash, logIndex) {
+  const rowExists = await new Promise((resolve) => {
+    db.get('SELECT * FROM events WHERE tx = ? AND log_index = ? AND discord_sent != 1', [txHash, logIndex], (err, row) => {
+      if (err) {
+        resolve(false);
+      }
+      resolve(row !== undefined);
+    });
+  });
+  return rowExists;
+}
+
+async function markSent(txHash, logIndex) {
+  try {
+    const stmt = db.prepare('UPDATE events SET discord_sent = 1 WHERE tx = ? AND log_index = ?');
+    stmt.run(txHash, logIndex);
+    stmt.finalize();
+  } catch(err) {
+    console.log(`Error writing to database: ${err}`)
+  }
+}
+
 async function writeToDatabase(_q) {
   // txHash, logIndex, contractName, contractAddress, eventName, eventSource, sourceOwner, targetOwner, tokenId, amount, txDate
   const rowExists = await checkRowExists(_q.txHash, _q.logIndex, _q.contractAddress);
   if (!rowExists) {
     let stmt;
     try {
-      stmt = db.prepare('INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?)');
+      stmt = db.prepare('INSERT INTO events VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
       stmt.run(
         _q.contractAddress,
         _q.eventName,
@@ -363,7 +390,9 @@ async function writeToDatabase(_q) {
         _q.txDate.toISOString(),
         _q.txHash,
         _q.logIndex,
-        _q.eventSource
+        _q.eventSource,
+        0,
+        0
       );
       stmt.finalize();
       return true;
@@ -397,6 +426,7 @@ if (process.env.SCRAPE) {
   c.scrape()
 } else {
   for(const key in ALL_CONTRACTS) {
+    if (process.env.ONLY && process.env.ONLY != key) continue
     const c = new Scrape(key);
     c.scrape();
   }
