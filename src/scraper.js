@@ -258,7 +258,7 @@ class Scrape extends Collection {
           writeToDatabase(q)
             .then((res) => this.writeLastBlock(log.blockNumber))
             .catch((err) => console.log(`Error writing to database: ${err}`));
-          if (checkUnsentNotif(txHash, logIndex)) {
+          if (process.env.DISCORD_ACTIVE == 1 && checkUnsentNotif(txHash, logIndex)) {
             postDiscord(q)
               .then(async res => {
                 await markSent(txHash, logIndex);
