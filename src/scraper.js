@@ -178,7 +178,7 @@ class Scrape extends Collection {
           // Handle Opensea/Seaport sales
           const logDescription = seaportInterface.parseLog(log)
           const matchingOffers = logDescription.args.offer.filter(
-            o =>  o.token.toLowerCase() == this.contractAddress
+            o =>  o.token.toLowerCase() == this.contractAddress.toLowerCase()
           );
           if (matchingOffers.length === 0) return;
           sale = true;
@@ -217,7 +217,7 @@ class Scrape extends Collection {
         } else if (log.topics[0].toLowerCase() === LOOKSRARE_SALE_TOPIC.toLowerCase()) {
           // Handle LooksRare sales
           const logDescription = looksrareInterface.parseLog(log);
-          if (logDescription.args.collection.toLowerCase() != this.contractAddress) return;
+          if (logDescription.args.collection.toLowerCase() != this.contractAddress.toLowerCase()) return;
           sale = true;
           platform = 'looksrare';
           fromAddress = logDescription.args.maker.toLowerCase();
@@ -258,11 +258,12 @@ class Scrape extends Collection {
           writeToDatabase(q)
             .then((res) => this.writeLastBlock(log.blockNumber))
             .catch((err) => console.log(`Error writing to database: ${err}`));
-          if (process.env.DISCORD_ACTIVE == 1 && checkUnsentNotif(txHash, logIndex)) {
+          let notifSent = await checkUnsentNotif(txHash, logIndex);
+          if (process.env.DISCORD_ACTIVE == 1 && notifSent) {
             postDiscord(q)
               .then(async res => {
                 await markSent(txHash, logIndex);
-                console.log(`[ ${timestamp.toISOString()} ][ ${this.contractName} ][ discord ] ${res}`)
+                console.log(`[ ${timestamp.toISOString()} ][ ${this.contractName} ][ discord ] ${res}\n`)
               })
               .catch((err) => console.log(`Error posting to Discord: ${err}`));
           }
@@ -428,6 +429,10 @@ if (process.env.SCRAPE) {
   for(const key in ALL_CONTRACTS) {
     if (process.env.ONLY && process.env.ONLY != key) continue
     const c = new Scrape(key);
+    if (process.env.TX) {
+      c.getSalesEvents(process.env.TX);
+      continue;
+    }
     c.scrape();
   }
 }
