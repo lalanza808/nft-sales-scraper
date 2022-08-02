@@ -10,7 +10,7 @@ if (fs.existsSync('.env.local')) {
 }
 
 const ALL_CONTRACTS = require('../data/contracts');
-const db = new Database('./storage/sqlite.db');
+const db = new Database('./storage/sqlite.db', {readonly: true});
 const app = express();
 const port = process.env.PORT || 3000;
 
