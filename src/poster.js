@@ -15,7 +15,7 @@ async function postDiscord(_q) {
   if (process.env.DISCORD_ACTIVE == 0) return
   try {
     const title = `Sale of token ${_q.tokenId} for ${_q.contractName}!`;
-    const desc = `Purchased by ${shortenAddress(_q.targetOwner)} at <t:${Number(_q.txDate.getTime()) / 1000}> for ${ethers.utils.formatEther(_q.amount.toString())}Ξ on ${camelCase(_q.eventSource)}`;
+    const desc = `Purchased by ${shortenAddress(_q.targetOwner)} at <t:${Number(_q.txDate.getTime()) / 1000}> for ${ethers.utils.formatEther(_q.amount.toString())}Ξ on ${camelCase(_q.eventSource)}. [Etherscan](https://etherscan.io/tx/${_q.txHash})`;
     const url = `${assetsBase}/${_q.contractAddress}/${_q.tokenId.toString()}.json`;
     const metadata = await fetch(url)
       .then((r) => r.json());
@@ -34,7 +34,7 @@ async function postDiscord(_q) {
             image: {
               url: imageURL
             },
-            url: `https://etherscan.io/tx/${_q.txHash}`
+            url: `https://gallery.art101.io/collection/${_q.contractName}/${_q.tokenId}`
           }
         ]
       })
