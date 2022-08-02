@@ -259,7 +259,7 @@ class Scrape extends Collection {
             .then((res) => this.writeLastBlock(log.blockNumber))
             .catch((err) => console.log(`Error writing to database: ${err}`));
           let notifSent = await checkUnsentNotif(txHash, logIndex);
-          if (process.env.DISCORD_ACTIVE == 1 && notifSent) {
+          if (process.env.DISCORD_ACTIVE == 1 && (notifSent || process.env.FORCE == 1)) {
             postDiscord(q)
               .then(async res => {
                 await markSent(txHash, logIndex);
