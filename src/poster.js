@@ -19,7 +19,7 @@ async function postDiscord(_q) {
     const url = `${assetsBase}/${_q.contractAddress}/${_q.tokenId.toString()}.json`;
     const metadata = await fetch(url)
       .then((r) => r.json());
-    const imageURL = metadata.image.replace('ipfs://', `${assetsBase}/${_q.contractAddress}/`);
+    const imageURL = metadata.image.replace('ipfs://', `${assetsBase}/${_q.contractAddress}/`) + '.fullsize.png';
     const res = await fetch(process.env.DISCORD_WEBHOOK, {
       method: 'POST',
       headers: {
