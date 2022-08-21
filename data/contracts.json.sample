@@ -33,5 +33,10 @@
         "contract_address": "0x6c61fB2400Bf55624ce15104e00F269102dC2Af4",
         "erc1155": false,
         "start_block": 14940603
+    },
+    "nftisse": {
+        "contract_address": "0x343b68141129ec115c1fc523c5ae90586fe95b77",
+        "erc1155": false,
+        "start_block": 	15358089
     }
 }
