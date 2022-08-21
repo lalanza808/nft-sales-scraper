@@ -110,6 +110,7 @@ class Scrape extends Collection {
         await sleep(120);
       }
     }
+    console.log('Exiting scraper.');
   }
 
   // query historical logs
