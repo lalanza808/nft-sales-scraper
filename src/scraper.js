@@ -425,17 +425,13 @@ async function writeToDatabase(_q) {
 // c.getSalesEvents('0xe567d00bb0c16928d5d8c258de8dd928e93209b40f7c958bc485d2a6c549b8a9')
 // return
 
-if (process.env.SCRAPE) {
-  let c = new Scrape(process.env.SCRAPE)
-  c.scrape()
-} else {
-  for(const key in ALL_CONTRACTS) {
-    if (process.env.ONLY && process.env.ONLY != key) continue
-    const c = new Scrape(key);
-    if (process.env.TX) {
-      c.getSalesEvents(process.env.TX);
-      continue;
-    }
-    c.scrape();
+
+for(const key in ALL_CONTRACTS) {
+  if (process.env.ONLY && process.env.ONLY != key) continue
+  const c = new Scrape(key);
+  if (process.env.TX) {
+    c.getSalesEvents(process.env.TX);
+    continue;
   }
+  c.scrape();
 }
