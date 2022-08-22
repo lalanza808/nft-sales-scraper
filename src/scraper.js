@@ -177,23 +177,25 @@ class Scrape extends Collection {
         let tokenId;
         if (log.topics[0].toLowerCase() === SEAPORT_SALE_TOPIC.toLowerCase()) {
           // Handle Opensea/Seaport sales
-          const logDescription = seaportInterface.parseLog(log)
-          const matchingOffers = logDescription.args.offer.filter(
+          const logDescription = seaportInterface.parseLog(log);
+          // skip if not logs do not match contract address
+          const matchingOffers = logDescription.args.consideration.filter(
             o =>  o.token.toLowerCase() == this.contractAddress.toLowerCase()
           );
           if (matchingOffers.length === 0) return;
+          const ethOffer = logDescription.args.offer.map(
+            o => (o.token.toLowerCase() === this.contractAddress.toLowerCase() && o.amount > 0) ? BigInt(o.amount) : BigInt(0)
+          );
+          const wethOffer = logDescription.args.offer.map(
+            o => (o.token.toLowerCase() === WETH_ADDRESS.toLowerCase() && o.amount > 0) ? BigInt(o.amount) : BigInt(0)
+          );
+          const allOffers = ethOffer.concat(wethOffer);
           sale = true;
           platform = 'opensea';
           fromAddress = logDescription.args.offerer.toLowerCase();
           toAddress = logDescription.args.recipient.toLowerCase();
           tokenId = logDescription.args.offer.map(o => o.identifier.toString());
-          let amounts = logDescription.args.consideration.map(c => BigInt(c.amount));
-          // add weth
-          const wethOffers = matchingOffers.map(o => o.token.toLowerCase() === WETH_ADDRESS.toLowerCase() && o.amount > 0 ? BigInt(o.amount) : BigInt(0));
-          if (wethOffers.length > 0 && wethOffers[0] != BigInt(0)) {
-            amounts = wethOffers
-          }
-          amountWei = amounts.reduce((previous,current) => previous + current, BigInt(0));
+          amountWei = allOffers.reduce((prev, curr) => prev + curr, BigInt(0));
         } else if (log.topics[0].toLowerCase() === WYVERN_SALE_TOPIC.toLowerCase()) {
           // Handle Opensea/Wyvern sales
           const logDescription = wyvernInterface.parseLog(log);
