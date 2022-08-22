@@ -178,24 +178,35 @@ class Scrape extends Collection {
         if (log.topics[0].toLowerCase() === SEAPORT_SALE_TOPIC.toLowerCase()) {
           // Handle Opensea/Seaport sales
           const logDescription = seaportInterface.parseLog(log);
-          // skip if not logs do not match contract address
-          const matchingOffers = logDescription.args.consideration.filter(
+          const matchingEthOffer = logDescription.args.offer.filter(
             o =>  o.token.toLowerCase() == this.contractAddress.toLowerCase()
           );
-          if (matchingOffers.length === 0) return;
-          const ethOffer = logDescription.args.offer.map(
-            o => (o.token.toLowerCase() === this.contractAddress.toLowerCase() && o.amount > 0) ? BigInt(o.amount) : BigInt(0)
+          const matchingWethOffer = logDescription.args.offer.filter(
+            o =>  o.token.toLowerCase() == WETH_ADDRESS.toLowerCase()
           );
-          const wethOffer = logDescription.args.offer.map(
-            o => (o.token.toLowerCase() === WETH_ADDRESS.toLowerCase() && o.amount > 0) ? BigInt(o.amount) : BigInt(0)
-          );
-          const allOffers = ethOffer.concat(wethOffer);
+          // skip if logs do not match contract address
+          if (matchingEthOffer.length === 0 && matchingWethOffer.length === 0) return;
           sale = true;
           platform = 'opensea';
           fromAddress = logDescription.args.offerer.toLowerCase();
           toAddress = logDescription.args.recipient.toLowerCase();
           tokenId = logDescription.args.offer.map(o => o.identifier.toString());
-          amountWei = allOffers.reduce((prev, curr) => prev + curr, BigInt(0));
+          // slightly different logic if wETH offer accepted vs ETH purchase
+          if (matchingWethOffer.length > 0) {
+            // wETH accepted bids provide the grand total in the offer
+            amountWei = BigInt(matchingWethOffer.map(
+              o => (o.amount > 0) ? o.amount : 0
+            ));
+          } else {
+            // ETH accepted offers provide the fee amounts to tally up
+            const allAmounts = logDescription.args.consideration.map(
+              _f => BigInt(_f.amount)
+            );
+            amountWei = allAmounts.reduce(
+              (prev, cur) => prev + cur,
+              BigInt(0)
+            );
+          }
         } else if (log.topics[0].toLowerCase() === WYVERN_SALE_TOPIC.toLowerCase()) {
           // Handle Opensea/Wyvern sales
           const logDescription = wyvernInterface.parseLog(log);
