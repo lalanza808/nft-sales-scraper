@@ -209,23 +209,29 @@ class Scrape extends Collection {
           }
         } else if (log.topics[0].toLowerCase() === WYVERN_SALE_TOPIC.toLowerCase()) {
           // Handle Opensea/Wyvern sales
+          let txEventType = TRANSFER_TOPIC.toLowerCase();
           const logDescription = wyvernInterface.parseLog(log);
           sale = true;
           platform = 'opensea';
+          if (this.erc1155) txEventType = TRANSFER_SINGLE_TOPIC.toLowerCase();
+          // get transfer log to deduce from/to/token_id
+          const txLog = receipt.logs.filter(
+            l => (
+              l.topics[0].toLowerCase() == txEventType
+              &&
+              l.address.toLowerCase() === this.contractAddress.toLowerCase()
+              &&
+              l.logIndex === logIndex - 1 // transfer should be immediately before sale
+            )
+          );
+          if (txLog.length === 0) return;
+          const txLogDescription = this.interface.parseLog(txLog[0]);
+          fromAddress = txLogDescription.args.from.toLowerCase();
+          toAddress = txLogDescription.args.to.toLowerCase();
           if (this.erc1155) {
-            const txLog = receipt.logs.map(l => l).filter(_l =>
-              (_l.topics[0].toLowerCase() == TRANSFER_SINGLE_TOPIC.toLowerCase())
-            ).map(t => this.interface.parseLog(t))[0].args;
-            fromAddress = txLog.from.toLowerCase();
-            toAddress = txLog.to.toLowerCase();
-            tokenId = BigNumber.from(txLog.id).toString();
+            tokenId = BigNumber.from(txLogDescription.args.id).toString();
           } else {
-            const txLog = receipt.logs.map(l => l).filter(_l =>
-              (_l.topics[0].toLowerCase() == TRANSFER_TOPIC.toLowerCase())
-            ).map(t => this.interface.parseLog(t))[0].args;
-            fromAddress = txLog.from.toLowerCase();
-            toAddress = txLog.to.toLowerCase();
-            tokenId = BigNumber.from(txLog.tokenId).toString();
+            tokenId = BigNumber.from(txLogDescription.args.tokenId).toString();
           }
           amountWei = BigInt(logDescription.args.price);
         } else if (log.topics[0].toLowerCase() === LOOKSRARE_SALE_TOPIC.toLowerCase()) {
