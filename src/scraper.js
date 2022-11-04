@@ -19,6 +19,7 @@ const MARKETPLACE_ABI = require('../data/marketplace');
 const SEAPORT_ABI = require('../data/seaport');
 const WYVERN_ABI = require('../data/wyvern');
 const LOOKSRARE_ABI = require('../data/looksrare');
+const BLUR_ABI = require('../data/blur');
 const WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
 const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
 const TRANSFER_SINGLE_TOPIC = '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62';
@@ -26,9 +27,11 @@ const LOOKSRARE_SALE_TOPIC = '0x95fb6205e23ff6bda16a2d1dba56b9ad7c783f67c96fa149
 const SEAPORT_SALE_TOPIC = '0x9d9af8e38d66c62e2c12f0225249fd9d721c54b83f48d9352c97c6cacdcb6f31';
 const WYVERN_SALE_TOPIC = '0xc4109843e0b7d514e4c093114b863f8e7d8d9a458c372cd51bfe526b588006c9'
 const X2Y2_SALE_TOPIC = '0x3cbb63f144840e5b1b0a38a7c19211d2e89de4d7c5faf8b2d3c1776c302d1d33';
+const BLUR_SALE_TOPIC = '0x61cbb2a3dee0b6064c2e681aadd61677fb4ef319f0b547508d495626f5a62f64';
 const seaportInterface = new ethers.utils.Interface(SEAPORT_ABI);
 const looksrareInterface = new ethers.utils.Interface(LOOKSRARE_ABI);
 const wyvernInterface = new ethers.utils.Interface(WYVERN_ABI);
+const blurInterface = new ethers.utils.Interface(BLUR_ABI);
 const provider = new ethers.providers.WebSocketProvider(process.env.GETH_NODE);
 const db = new Database('./storage/sqlite.db');
 
@@ -256,6 +259,21 @@ class Scrape extends Collection {
           amountWei = BigInt(`0x${dataSlices[12]}`);
           if (amountWei === BigInt(0)) {
             amountWei = BigInt(`0x${dataSlices[26]}`);
+          }
+        } else if (log.topics[0].toLowerCase() === BLUR_SALE_TOPIC.toLowerCase()) {
+          // Handle Blur sales
+          sale = true;
+          platform = 'blur';
+          const logDescription = blurInterface.parseLog(log);
+          fromAddress = logDescription.args.maker;
+          toAddress = logDescription.args.taker;
+          tokenId = BigInt(logDescription.args.sell.tokenId);
+          amountWei = BigInt(logDescription.args.sell.price);
+          let rl = receipt.logs.filter(
+            l => l.logIndex === log.logIndex + 2 && l.topics[0].toLowerCase() === TRANSFER_TOPIC
+          );
+          if (rl.length > 0) {
+            toAddress = ethers.utils.defaultAbiCoder.decode(['address'], rl[0].topics[2]);
           }
         }
         if (sale) {
