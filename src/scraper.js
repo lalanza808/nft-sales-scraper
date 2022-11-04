@@ -269,11 +269,13 @@ class Scrape extends Collection {
           toAddress = logDescription.args.taker;
           tokenId = BigInt(logDescription.args.sell.tokenId);
           amountWei = BigInt(logDescription.args.sell.price);
+          // Blur's marketplace orders don't include the purchaser, only their proxy contract which passes the token through
+          // This little hack just grabs the Transfer event after the Blur sale to get the end recipient
           let rl = receipt.logs.filter(
             l => l.logIndex === log.logIndex + 2 && l.topics[0].toLowerCase() === TRANSFER_TOPIC
           );
           if (rl.length > 0) {
-            toAddress = ethers.utils.defaultAbiCoder.decode(['address'], rl[0].topics[2]);
+            toAddress = ethers.utils.defaultAbiCoder.decode(['address'], rl[0].topics[2])[0].toLowerCase();
           }
         }
         if (sale) {
