@@ -193,7 +193,7 @@ class Scrape extends Collection {
           platform = 'opensea';
           fromAddress = logDescription.args.offerer.toLowerCase();
           toAddress = logDescription.args.recipient.toLowerCase();
-          tokenId = logDescription.args.consideration.filter(i => i.identifier.toString() != 0).map(i => i.identifier.toString())[0];
+          tokenId = logDescription.args.offer[0].identifier.toString();
           // slightly different logic if wETH offer accepted vs ETH purchase
           if (matchingWethOffer.length > 0) {
             // wETH accepted bids provide the grand total in the offer
