@@ -110,10 +110,9 @@ class Scrape extends Collection {
       while (lastScrapedBlock >= latestEthBlock) {
         latestEthBlock = await this.provider.getBlockNumber();
         console.log(`[ ${(new Date()).toISOString()} ][ ${this.contractName} ] [ waiting ]\n`)
-        await sleep(120);
+        await sleep(900);
       }
     }
-    console.log('Exiting scraper.');
   }
 
   // query historical logs
