@@ -38,5 +38,10 @@
         "contract_address": "0x343b68141129ec115c1fc523c5ae90586fe95b77",
         "erc1155": false,
         "start_block": 	15358089
+    },
+    "renascence": {
+        "contract_address": "0x501a31185927136E87cDfC97dDd4553D8eC1bb4A",
+        "erc1155": false,
+        "start_block": 	15973593
     }
 }
