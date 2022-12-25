@@ -111,6 +111,8 @@ class Scrape extends Collection {
         console.log(`[ ${(new Date()).toISOString()} ][ ${this.contractName} ] [ waiting ]\n`)
         await sleep(900);
       }
+
+      await sleep(1);
     }
   }
 
