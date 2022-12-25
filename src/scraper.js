@@ -175,39 +175,20 @@ class Scrape extends Collection {
         let fromAddress;
         let toAddress;
         let amountWei;
-        let amountEther;
         let tokenId;
         if (log.topics[0].toLowerCase() === SEAPORT_SALE_TOPIC.toLowerCase()) {
           // Handle Opensea/Seaport sales
           const logDescription = seaportInterface.parseLog(log);
-          const matchingEthOffer = logDescription.args.offer.filter(
-            o =>  o.token.toLowerCase() == this.contractAddress.toLowerCase()
-          );
-          const matchingWethOffer = logDescription.args.offer.filter(
-            o =>  o.token.toLowerCase() == WETH_ADDRESS.toLowerCase()
-          );
-          // skip if logs do not match contract address
-          if (matchingEthOffer.length === 0 && matchingWethOffer.length === 0) return;
           sale = true;
           platform = 'opensea';
           fromAddress = logDescription.args.offerer.toLowerCase();
           toAddress = logDescription.args.recipient.toLowerCase();
-          tokenId = logDescription.args.offer[0].identifier.toString();
-          // slightly different logic if wETH offer accepted vs ETH purchase
-          if (matchingWethOffer.length > 0) {
-            // wETH accepted bids provide the grand total in the offer
-            amountWei = BigInt(matchingWethOffer.map(
-              o => (o.amount > 0) ? o.amount : 0
-            ));
-          } else {
-            // ETH accepted offers provide the fee amounts to tally up
-            const allAmounts = logDescription.args.consideration.map(
-              _f => BigInt(_f.amount)
-            );
-            amountWei = allAmounts.reduce(
-              (prev, cur) => prev + cur,
-              BigInt(0)
-            );
+          amountWei = BigNumber.from(logDescription.args.offer[0].amount).toString();
+          let rl = receipt.logs.filter(
+            l => l.logIndex === log.logIndex + 2 && l.topics[0].toLowerCase() === TRANSFER_TOPIC
+          );
+          if (rl.length > 0) {
+            tokenId = BigInt(rl[0].topics[3]);
           }
         } else if (log.topics[0].toLowerCase() === WYVERN_SALE_TOPIC.toLowerCase()) {
           // Handle Opensea/Wyvern sales
@@ -278,7 +259,7 @@ class Scrape extends Collection {
           }
         }
         if (sale) {
-          amountEther = ethers.utils.formatEther(amountWei);
+          let amountEther = ethers.utils.formatEther(amountWei);
           let msg = `[ ${timestamp.toISOString()} ][ ${this.contractName} ][ sale ] #${tokenId}: ${fromAddress} => ${toAddress} for ${amountEther}Ξ (${platform}) in tx ${txHash}:${logIndex}\n`;
           console.log(msg);
           const q = {
