@@ -1,5 +1,5 @@
-const { BigNumber, ethers } = require('ethers');
 const fs = require('fs');
+const { BigNumber, ethers } = require('ethers');
 const { Database } = require('sqlite3');
 const { postDiscord } = require('./poster');
 
@@ -15,7 +15,6 @@ const CHUNK_SIZE = Number(process.env.CHUNK_SIZE);
 const ALL_CONTRACTS = require('../data/contracts');
 const ERC721_ABI = require('../data/erc721');
 const ERC1155_ABI = require('../data/erc1155');
-const MARKETPLACE_ABI = require('../data/marketplace');
 const SEAPORT_ABI = require('../data/seaport');
 const WYVERN_ABI = require('../data/wyvern');
 const LOOKSRARE_ABI = require('../data/looksrare');
@@ -130,7 +129,6 @@ class Scrape extends Collection {
 
   // get transfer events from a batch from filtering
   async getTransferEvents(txEvents) {
-    let platform = 'contract';
     txEvents.forEach(async tx => {
       let tokenId;
       if (this.erc1155) {
@@ -157,7 +155,7 @@ class Scrape extends Collection {
         txDate: timestamp
       }
       writeToDatabase(q)
-        .then((res) => this.writeLastBlock(tx.blockNumber))
+        .then((_) => this.writeLastBlock(tx.blockNumber))
         .catch((err) => console.log(`Error writing to database: ${err}`));
     });
   }
