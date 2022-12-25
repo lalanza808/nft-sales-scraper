@@ -295,17 +295,19 @@ class Scrape extends Collection {
             txDate: timestamp
           }
           writeToDatabase(q)
-            .then((res) => this.writeLastBlock(log.blockNumber))
+            .then(async _ => {
+              let notifSent = await checkUnsentNotif(txHash, logIndex);
+              if (process.env.DISCORD_ACTIVE == 1 && (notifSent || process.env.FORCE == 1)) {
+                postDiscord(q)
+                  .then(async res => {
+                    await markSent(txHash, logIndex);
+                    console.log(`[ ${timestamp.toISOString()} ][ ${this.contractName} ][ discord ] ${res}\n`)
+                  })
+                  .catch((err) => console.log(`Error posting to Discord: ${err}`));
+              }
+              this.writeLastBlock(log.blockNumber);
+            })
             .catch((err) => console.log(`Error writing to database: ${err}`));
-          let notifSent = await checkUnsentNotif(txHash, logIndex);
-          if (process.env.DISCORD_ACTIVE == 1 && (notifSent || process.env.FORCE == 1)) {
-            postDiscord(q)
-              .then(async res => {
-                await markSent(txHash, logIndex);
-                console.log(`[ ${timestamp.toISOString()} ][ ${this.contractName} ][ discord ] ${res}\n`)
-              })
-              .catch((err) => console.log(`Error posting to Discord: ${err}`));
-          }
         }
       });
     } catch(err) {
