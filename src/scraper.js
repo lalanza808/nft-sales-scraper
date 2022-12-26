@@ -174,16 +174,29 @@ class Scrape extends Collection {
         let platform;
         let fromAddress;
         let toAddress;
-        let amountWei;
+        let amountWei = 0;
         let tokenId;
         if (log.topics[0].toLowerCase() === SEAPORT_SALE_TOPIC.toLowerCase()) {
           // Handle Opensea/Seaport sales
           const logDescription = seaportInterface.parseLog(log);
-          sale = true;
           platform = 'opensea';
-          fromAddress = logDescription.args.offerer.toLowerCase();
-          toAddress = logDescription.args.recipient.toLowerCase();
-          amountWei = BigNumber.from(logDescription.args.offer[0].amount).toString();
+          if (logDescription.args.offer[0].token.toLowerCase() == this.contractAddress.toLowerCase()) {
+            // buyer has accepted seller offer
+            sale = true;
+            fromAddress = logDescription.args.offerer.toLowerCase();
+            toAddress = logDescription.args.recipient.toLowerCase();
+            logDescription.args.consideration.map((o) => {
+              if (Number(o.amount) > 0) amountWei += Number(o.amount);
+            });
+          } else if (logDescription.args.offer[0].token.toLowerCase() == WETH_ADDRESS.toLowerCase()) {
+            // seller has accepted buyer bid
+            sale = true;
+            toAddress = logDescription.args.offerer.toLowerCase();
+            fromAddress = logDescription.args.recipient.toLowerCase();
+            amountWei = BigNumber.from(logDescription.args.offer[0].amount).toString();
+          } else {
+            // unknown condition
+          }
           let rl = receipt.logs.filter(
             l => l.logIndex === log.logIndex + 2 && l.topics[0].toLowerCase() === TRANSFER_TOPIC
           );
