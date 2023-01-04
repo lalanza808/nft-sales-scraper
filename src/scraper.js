@@ -188,20 +188,24 @@ class Scrape extends Collection {
             logDescription.args.consideration.map((o) => {
               if (Number(o.amount) > 0) amountWei += Number(o.amount);
             });
+            receipt.logs.filter(
+              l => l.logIndex === log.logIndex + 2 && l.topics[0].toLowerCase() === TRANSFER_TOPIC
+            ).map((t) => {
+              tokenId = BigInt(t.topics[3]);
+            });
           } else if (logDescription.args.offer[0].token.toLowerCase() == WETH_ADDRESS.toLowerCase()) {
             // seller has accepted buyer bid
             sale = true;
             toAddress = logDescription.args.offerer.toLowerCase();
             fromAddress = logDescription.args.recipient.toLowerCase();
             amountWei = BigNumber.from(logDescription.args.offer[0].amount).toString();
+            receipt.logs.filter(
+              l => l.logIndex === log.logIndex - 3 && l.topics[0].toLowerCase() === TRANSFER_TOPIC && l.address.toLowerCase() === this.contractAddress.toLowerCase()
+            ).map((t) => {
+              tokenId = BigInt(t.topics[3]);
+            });
           } else {
             // unknown condition
-          }
-          let rl = receipt.logs.filter(
-            l => l.logIndex === log.logIndex + 2 && l.topics[0].toLowerCase() === TRANSFER_TOPIC
-          );
-          if (rl.length > 0) {
-            tokenId = BigInt(rl[0].topics[3]);
           }
         } else if (log.topics[0].toLowerCase() === WYVERN_SALE_TOPIC.toLowerCase()) {
           // Handle Opensea/Wyvern sales
