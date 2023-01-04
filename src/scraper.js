@@ -272,7 +272,7 @@ class Scrape extends Collection {
           }
         }
         if (sale) {
-          let amountEther = ethers.utils.formatEther(amountWei);
+          let amountEther = ethers.utils.formatEther(amountWei.toString());
           let msg = `[ ${timestamp.toISOString()} ][ ${this.contractName} ][ sale ] #${tokenId}: ${fromAddress} => ${toAddress} for ${amountEther}Ξ (${platform}) in tx ${txHash}:${logIndex}\n`;
           console.log(msg);
           const q = {
