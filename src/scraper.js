@@ -266,6 +266,7 @@ class Scrape extends Collection {
           toAddress = logDescription.args.taker;
           tokenId = BigInt(logDescription.args.sell.tokenId);
           amountWei = BigInt(logDescription.args.sell.price);
+          // console.log(logDescription)
           // Blur's marketplace orders don't include the purchaser, only their proxy contract which passes the token through
           // This little hack just grabs the Transfer event after the Blur sale to get the end recipient
           let rl = receipt.logs.filter(
@@ -288,7 +289,7 @@ class Scrape extends Collection {
             eventSource: platform,
             sourceOwner: fromAddress,
             targetOwner: toAddress,
-            tokenId: tokenId,
+            tokenId: tokenId.toString(),
             amount: amountWei,
             txDate: timestamp
           }
