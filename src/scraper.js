@@ -167,6 +167,8 @@ class Scrape extends Collection {
     try {
       const receipt = await this.provider.getTransactionReceipt(txHash);
       const timestamp = await this.getBlockTimestamp(receipt.blockNumber);
+      const _logs = receipt.logs.filter((l) => l.address.toLowerCase() === this.contractAddress.toLowerCase());
+      if (_logs == 0) return
       // Evaluate each log entry and determine if it's a sale for our contract and use custom logic for each exchange to parse values
       receipt.logs.map(async log => {
         let logIndex = log.logIndex;
@@ -189,22 +191,19 @@ class Scrape extends Collection {
               if (Number(o.amount) > 0) amountWei += Number(o.amount);
             });
             amountWei = amountWei.toString();
+            let rl = logDescription.args.offer.filter((l) => l.token.toLowerCase() === this.contractAddress.toLowerCase());
+            if (rl.length > 0) tokenId = rl[0].identifier.toString();
           } else if (logDescription.args.offer[0].token.toLowerCase() == WETH_ADDRESS.toLowerCase()) {
             // seller has accepted buyer bid
             sale = true;
             toAddress = logDescription.args.offerer.toLowerCase();
             fromAddress = logDescription.args.recipient.toLowerCase();
             amountWei = BigNumber.from(logDescription.args.offer[0].amount).toString();
-            receipt.logs.filter(
-              l => l.logIndex === log.logIndex - 3 && l.topics[0].toLowerCase() === TRANSFER_TOPIC && l.address.toLowerCase() === this.contractAddress.toLowerCase()
-            ).map((t) => {
-              tokenId = BigInt(t.topics[3]);
-            });
+            const _c = logDescription.args.consideration.filter((c) => c.token.toLowerCase() === this.contractAddress.toLowerCase());
+            tokenId = _c[0].identifier.toString();
           } else {
             // unknown condition
           }
-          let rl = logDescription.args.offer.filter((l) => l.token.toLowerCase() === this.contractAddress.toLowerCase());
-          if (rl.length > 0) tokenId = rl[0].identifier.toString();
         } else if (log.topics[0].toLowerCase() === WYVERN_SALE_TOPIC.toLowerCase()) {
           // Handle Opensea/Wyvern sales
           let txEventType = TRANSFER_TOPIC.toLowerCase();
