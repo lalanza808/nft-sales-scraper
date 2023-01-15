@@ -188,11 +188,7 @@ class Scrape extends Collection {
             logDescription.args.consideration.map((o) => {
               if (Number(o.amount) > 0) amountWei += Number(o.amount);
             });
-            receipt.logs.filter(
-              l => l.logIndex === log.logIndex + 2 && l.topics[0].toLowerCase() === TRANSFER_TOPIC
-            ).map((t) => {
-              tokenId = BigInt(t.topics[3]);
-            });
+            amountWei = amountWei.toString();
           } else if (logDescription.args.offer[0].token.toLowerCase() == WETH_ADDRESS.toLowerCase()) {
             // seller has accepted buyer bid
             sale = true;
@@ -207,6 +203,8 @@ class Scrape extends Collection {
           } else {
             // unknown condition
           }
+          let rl = logDescription.args.offer.filter((l) => l.token.toLowerCase() === this.contractAddress.toLowerCase());
+          if (rl.length > 0) tokenId = rl[0].identifier.toString();
         } else if (log.topics[0].toLowerCase() === WYVERN_SALE_TOPIC.toLowerCase()) {
           // Handle Opensea/Wyvern sales
           let txEventType = TRANSFER_TOPIC.toLowerCase();
