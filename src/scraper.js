@@ -194,13 +194,16 @@ class Scrape extends Collection {
             let rl = logDescription.args.offer.filter((l) => l.token.toLowerCase() === this.contractAddress.toLowerCase());
             if (rl.length > 0) tokenId = rl[0].identifier.toString();
           } else if (logDescription.args.offer[0].token.toLowerCase() == WETH_ADDRESS.toLowerCase()) {
-            // seller has accepted buyer bid
-            sale = true;
-            toAddress = logDescription.args.offerer.toLowerCase();
-            fromAddress = logDescription.args.recipient.toLowerCase();
-            amountWei = BigNumber.from(logDescription.args.offer[0].amount).toString();
+            // seller has accepted buyer bid (uses WETH)
+            // filter down only sales on the contract
             const _c = logDescription.args.consideration.filter((c) => c.token.toLowerCase() === this.contractAddress.toLowerCase());
-            tokenId = _c[0].identifier.toString();
+            _c.map((o) => {
+              sale = true;
+              toAddress = logDescription.args.offerer.toLowerCase();
+              fromAddress = logDescription.args.recipient.toLowerCase();
+              amountWei = BigNumber.from(logDescription.args.offer[0].amount).toString();
+              tokenId = _c[0].identifier.toString();
+            })
           } else {
             // unknown condition
           }
