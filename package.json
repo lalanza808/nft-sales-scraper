@@ -5,6 +5,7 @@
     "node": "16.x"
   },
   "description": "",
+  "type": "commonjs",
   "main": "src/main.js",
   "scripts": {
     "serve": "node --max_old_space_size=128 --optimize_for_size src/server.js",
@@ -17,7 +18,7 @@
   "author": "lza_menace",
   "license": "ISC",
   "dependencies": {
-    "better-sqlite3": "^7.4.5",
+    "better-sqlite3": "^11.5.0",
     "bignumber.js": "^9.0.1",
     "concurrently": "^6.5.0",
     "dotenv": "^10.0.0",

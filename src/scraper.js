@@ -77,43 +77,40 @@ class Scrape extends Collection {
   async scrape() {
     let latestEthBlock = await this.provider.getBlockNumber();
     let lastScrapedBlock = this.getLastBlock();
-    while (true) {
-      const lastRequested = lastScrapedBlock;
+    const lastRequested = lastScrapedBlock;
 
-      await this.filterTransfers(lastScrapedBlock).then(async ev => {
-        // capture transfer events with returned array of Transfers
+    await this.filterTransfers(lastScrapedBlock).then(async ev => {
+      // capture transfer events with returned array of Transfers
+      try {
+        await this.getTransferEvents(ev);
+      } catch(err) {
+        console.log(ev)
+        throw new Error(err);
+      }
+      // filter down unique transaction hashes
+      ev.map(tx => tx.transactionHash).filter((tx, i, a) => a.indexOf(tx) === i).map(async txHash => {
+        // capture sales events for each
         try {
-          await this.getTransferEvents(ev);
+          await this.getSalesEvents(txHash);
         } catch(err) {
-          console.log(ev)
+          console.log(txHash)
           throw new Error(err);
         }
-        // filter down unique transaction hashes
-        ev.map(tx => tx.transactionHash).filter((tx, i, a) => a.indexOf(tx) === i).map(async txHash => {
-          // capture sales events for each
-          try {
-            await this.getSalesEvents(txHash);
-          } catch(err) {
-            console.log(txHash)
-            throw new Error(err);
-          }
-        });
       });
+    });
 
-      if (lastRequested === lastScrapedBlock) {
-        lastScrapedBlock += CHUNK_SIZE;
-        this.writeLastBlock(lastScrapedBlock);
-        if (lastScrapedBlock > latestEthBlock) lastScrapedBlock = latestEthBlock;
-      }
-
-      while (lastScrapedBlock >= latestEthBlock) {
-        latestEthBlock = await this.provider.getBlockNumber();
-        console.log(`[ ${(new Date()).toISOString()} ][ ${this.contractName} ] [ waiting ]\n`)
-        await sleep(900);
-      }
-
-      await sleep(1);
+    if (lastRequested === lastScrapedBlock) {
+      lastScrapedBlock += CHUNK_SIZE;
+      this.writeLastBlock(lastScrapedBlock);
+      if (lastScrapedBlock > latestEthBlock) lastScrapedBlock = latestEthBlock;
     }
+
+    while (lastScrapedBlock >= latestEthBlock) {
+      latestEthBlock = await this.provider.getBlockNumber();
+      console.log(`[ ${(new Date()).toISOString()} ][ ${this.contractName} ] [ waiting ]\n`)
+      return
+    }
+
   }
 
   // query historical logs
@@ -446,29 +443,18 @@ async function writeToDatabase(_q) {
   return true;
 }
 
-// Sample events for testing functionality and detecting sales
-// let c = new Scrape('non-fungible-soup');
-// c.getSalesEvents('0x2f8961209daca23288c499449aa936b54eec5c25720b9d7499a8ee5bde7fcdc7')
-// c.getSalesEvents('0xb20853f22b367ee139fd800206bf1cba0c36f1a1dd739630f99cc6ffd0471edc')
-// c.getSalesEvents('0x71e5135a543e17cc91992a2229ae5811461c96b84d5e2560ac8db1dd99bb17e3')
-// c.getSalesEvents('0x5dc68e0bd60fa671e7b6702002e4ce374de6a5dd49fcda00fdb45e26771bcbd9')
-// c.getSalesEvents('0x975d10cdd873ee5bb29e746c2f1f3b776078cace9c04ce419cb66949239288b5')
-// c.getSalesEvents('0x8d45ed8168a740f8b182ec0dbad1c37d6c6dbd8aa865be408d865ca01fb0fa94')
-// c.getSalesEvents('0x27ab6f12604bf17a9e7c93bf1a7cc466d7dfd922565d267eac10879b59d5d0b5')
-// c.getSalesEvents('0x511bc5cda2b7145511c7b57e29cecf1f15a5a650670f09e91e69fc24824effd9')
-// c.getSalesEvents('0x04746b6ba1269906db8e0932263b86a6fc35a30a31cf73d2b7db078f6f4ed442')
-// c.getSalesEvents('0x24d6523c5048b2df3e7f8b24d63a6644e4c0ed33cfae6396190e3ded5fc79321')
-// c.getSalesEvents('0xe56dc64c44a3cbfe3a1e68f8669a65f17ebe48d64e944673122a565b7c641d1e')
-// c.getSalesEvents('0xe567d00bb0c16928d5d8c258de8dd928e93209b40f7c958bc485d2a6c549b8a9')
-// return
-
-
-for(const key in ALL_CONTRACTS) {
-  if (process.env.ONLY && process.env.ONLY != key) continue
-  const c = new Scrape(key);
+(async () => {
   if (process.env.TX) {
     c.getSalesEvents(process.env.TX);
-    continue;
+    return
+  } else {
+    while(true) {
+      for(const key in ALL_CONTRACTS) {
+        if (process.env.ONLY && process.env.ONLY != key) continue
+        const c = new Scrape(key);
+        c.scrape();
+        await sleep(1);
+      }
+    }
   }
-  c.scrape();
-}
+})();
