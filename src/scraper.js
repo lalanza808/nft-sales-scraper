@@ -154,7 +154,7 @@ class Scrape extends Collection {
         txDate: timestamp
       }
       writeToDatabase(q)
-        .then((_) => this.writeLastBlock(tx.blockNumber))
+        // .then((_) => this.writeLastBlock(tx.blockNumber))
         .catch((err) => console.log(`Error writing to database: ${err}`));
     });
   }
@@ -301,7 +301,7 @@ class Scrape extends Collection {
                   })
                   .catch((err) => console.log(`Error posting to Discord: ${err}`));
               }
-              this.writeLastBlock(log.blockNumber);
+              // this.writeLastBlock(log.blockNumber);
             })
             .catch((err) => console.log(`Error writing to database: ${err}`));
         }
