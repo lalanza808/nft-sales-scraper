@@ -93,6 +93,7 @@ class Scrape extends Collection {
         // capture sales events for each
         try {
           await this.getSalesEvents(txHash);
+          await sleep(1);
         } catch(err) {
           console.log(txHash)
           throw new Error(err);
@@ -132,7 +133,8 @@ class Scrape extends Collection {
       }
       const fromAddress = tx.args.from.toString().toLowerCase();
       const toAddress = tx.args.to.toString().toLowerCase();
-      const timestamp = await this.getBlockTimestamp(tx.blockNumber);
+      const ts = (await tx.getBlock()).timestamp
+      const timestamp = new Date(ts * 1000);
       let msg = `[ ${timestamp.toISOString()} ][ ${this.contractName} ][ transfer ] #${tokenId}: ${fromAddress} => ${toAddress} in tx ${tx.transactionHash}:${tx.logIndex}\n`;
       console.log(msg);
       const q = {
@@ -449,7 +451,7 @@ async function writeToDatabase(_q) {
         if (process.env.ONLY && process.env.ONLY != key) continue
         const c = new Scrape(key, latestBlock);
         c.scrape();
-        await sleep(1);
+        await sleep(2);
       }
     }
   }
