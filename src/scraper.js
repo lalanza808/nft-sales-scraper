@@ -61,10 +61,11 @@ class Scrape extends Collection {
 
   provider = this.getWeb3Provider();
 
-  constructor (contractName) {
+  constructor (contractName, blockNumber) {
     super(contractName);
     this.contract = new ethers.Contract(this.contractAddress, this.abi, this.provider);
     this.lastFile = `./storage/lastBlock.${this.contractName}.txt`;
+    this.lastBlock = blockNumber;
     createDatabaseIfNeeded();
   }
 
@@ -75,7 +76,7 @@ class Scrape extends Collection {
 
   // continuous scanning loop
   async scrape() {
-    let latestEthBlock = await this.provider.getBlockNumber();
+    let latestEthBlock = this.lastBlock;
     let lastScrapedBlock = this.getLastBlock();
     const lastRequested = lastScrapedBlock;
 
@@ -103,12 +104,6 @@ class Scrape extends Collection {
       lastScrapedBlock += CHUNK_SIZE;
       this.writeLastBlock(lastScrapedBlock);
       if (lastScrapedBlock > latestEthBlock) lastScrapedBlock = latestEthBlock;
-    }
-
-    while (lastScrapedBlock >= latestEthBlock) {
-      latestEthBlock = await this.provider.getBlockNumber();
-      console.log(`[ ${(new Date()).toISOString()} ][ ${this.contractName} ] [ waiting ]\n`)
-      return
     }
 
   }
@@ -448,10 +443,11 @@ async function writeToDatabase(_q) {
     c.getSalesEvents(process.env.TX);
     return
   } else {
+    const latestBlock = await provider.getBlockNumber();
     while(true) {
       for(const key in ALL_CONTRACTS) {
         if (process.env.ONLY && process.env.ONLY != key) continue
-        const c = new Scrape(key);
+        const c = new Scrape(key, latestBlock);
         c.scrape();
         await sleep(1);
       }
