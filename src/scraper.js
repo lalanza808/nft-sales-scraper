@@ -124,7 +124,8 @@ class Scrape extends Collection {
 
   // get transfer events from a batch from filtering
   async getTransferEvents(txEvents) {
-    txEvents.forEach(async tx => {
+    for (const tx of txEvents) {
+      await sleep(1);
       let tokenId;
       if (this.erc1155) {
         tokenId = tx.args.id.toString();
@@ -153,7 +154,7 @@ class Scrape extends Collection {
       writeToDatabase(q)
         // .then((_) => this.writeLastBlock(tx.blockNumber))
         .catch((err) => console.log(`Error writing to database: ${err}`));
-    });
+    };
   }
 
   // get sales events from a given transaction
@@ -450,8 +451,13 @@ async function writeToDatabase(_q) {
       for(const key in ALL_CONTRACTS) {
         if (process.env.ONLY && process.env.ONLY != key) continue
         const c = new Scrape(key, latestBlock);
-        c.scrape();
-        await sleep(2);
+        try {
+          await c.scrape();
+          await sleep(2);
+        } catch(e) {
+          console.log(e);
+          await sleep(10);
+        }
       }
     }
   }
