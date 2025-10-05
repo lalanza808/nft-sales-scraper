@@ -1,3 +1,9 @@
+# moved
+
+This project is no longer maintained. It is very cumbersome to scrape the entire chain and keep track of all the various marketplace contracts and ABIs. 
+
+I found the Moralis API to be simpler and cheaper (free) so I've moved this to https://github.com/art101nft/nft-sales-scraper/
+
 # NFT Sales Scraper
 
 This repo contains JavaScript code to scrape the Ethereum chain for sales for any number of ERC-721 or ERC-1155 compliant tokens. It also provides a simple website and API for visualizing sales and querying information across contracts and tokens, as well as posts notifications to Discord (and eventually Twitter).
